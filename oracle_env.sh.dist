@@ -1,0 +1,13 @@
+#!/bin/bash
+
+ORACLE_BASE=/oracle
+ORACLE_HOME=$ORACLE_BASE/orahome
+LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$ORACLE_HOME/lib
+PATH=$ORACLE_HOME/bin:$PATH
+NLS_LANG=American_America.AL32UTF8
+
+# oracle instant client - uncomment and set to directory with tnsnames.ora
+# TNS_ADMIN=$HOME/oracle_network
+# export TNS_ADMIN
+
+export ORACLE_BASE ORACLE_HOME LD_LIBRARY_PATH NLS_LANG PATH
