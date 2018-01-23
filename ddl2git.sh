@@ -13,7 +13,7 @@ SCRIPT_NAME=`basename $0`
 SCRIPT_DIR=$(dirname "$(realpath -s "$0")")
 SOURCES=$SCRIPT_DIR/sources
 
-ARGS_COUNT=1
+
 # error codes
 E_ERROR=10
 E_WRONG_ARGS=11
@@ -21,17 +21,24 @@ E_CONNECTION_ERROR=12
 E_CANT_GET_USERS=13
 E_USERS_NOT_FOUND=14
 E_DESTINATION_DIR=15
+E_CANT_GET_TYPES=16
+
 
 # check arguments
+ARGS_COUNT=1
 if [ $# -ne "$ARGS_COUNT" ]; then
     echo -e "Usage: $SCRIPT_NAME oracle_connect_string"
     echo -e "\nExample: $SCRIPT_NAME user/password@tns_db_name"
     exit $E_WRONG_ARGS
 fi
+
 ORACLE_CONNECT_STRING=$1
 
-source "$SCRIPT_DIR/oracle_env.sh"
+# global variables
+ORACLE_SQL_EXECUTE_RESULT=""
 
+
+# functions
 function checkExitCode(){
     local exitCode=$1
     local errorCode=${2:-$E_ERROR}
@@ -42,6 +49,23 @@ function checkExitCode(){
         echo -e "SqlPlus error:\n${errorMsg}"
         exit $errorCode
     fi
+}
+
+function execSQL(){
+    local SQL=$1
+    if [ -z "${SQL}" ]
+    then
+        return E_ERROR
+    fi
+
+    ORACLE_SQL_EXECUTE_RESULT=$(sqlplus -silent /nolog <<SQL
+        @$SCRIPT_DIR/src/login.sql ${ORACLE_CONNECT_STRING}
+        $SQL
+        EXIT
+        /
+SQL
+)
+    return $?
 }
 
 function checkAndCreateDestination(){
@@ -58,15 +82,16 @@ function checkAndCreateDestination(){
     fi
 }
 
-# test DB connection
-CONNECTION_TEST=$(sqlplus -silent /nolog <<SQL
-@$SCRIPT_DIR/src/login.sql ${ORACLE_CONNECT_STRING}
-SELECT * FROM DUAL;
-exit
-SQL
-)
+# load oracle environment variables
+source "$SCRIPT_DIR/oracle_env.sh"
 
-checkExitCode $? $E_CONNECTION_ERROR "$CONNECTION_TEST"
+# test DB connection
+execSQL "SELECT * FROM DUAL;"
+checkExitCode $? $E_CONNECTION_ERROR "$ORACLE_SQL_EXECUTE_RESULT"
+
+# =====================================================
+# Create destination project structure for export
+# =====================================================
 
 # get oracle instance from connection string
 ORACLE_INSTANCE=${ORACLE_CONNECT_STRING##*@}
@@ -74,19 +99,27 @@ ORACLE_INSTANCE_DIR=$SOURCES/$ORACLE_INSTANCE
 checkAndCreateDestination "$ORACLE_INSTANCE_DIR"
 
 # get users list for export schema scripts
-USER_LIST=$(sqlplus -silent /nolog <<SQL
-@$SCRIPT_DIR/src/login.sql ${ORACLE_CONNECT_STRING}
-@$SCRIPT_DIR/src/get_users.sql
-exit
-SQL
-)
+execSQL "@$SCRIPT_DIR/src/get_users.sql;"
+checkExitCode $? $E_CANT_GET_USERS "$ORACLE_SQL_EXECUTE_RESULT"
 
-checkExitCode $? $E_CANT_GET_USERS "$USER_LIST"
-
-echo $USER_LIST
+USER_LIST=$ORACLE_SQL_EXECUTE_RESULT
 
 if [ -z "${USER_LIST}" ]
 then
     echo "Users not found!"
     exit $E_USERS_NOT_FOUND
 fi
+
+for username in ${USER_LIST}
+do
+    USER_DIR=$ORACLE_INSTANCE_DIR/$username
+    echo -e "$USER_DIR"
+    checkAndCreateDestination "$USER_DIR"
+
+    execSQL "@$SCRIPT_DIR/src/get_types_for_user.sql $username"
+    checkExitCode $? $E_CANT_GET_TYPES "$ORACLE_SQL_EXECUTE_RESULT"
+
+    USER_TYPE_LIST=$ORACLE_SQL_EXECUTE_RESULT
+
+    echo $USER_TYPE_LIST;
+done
