@@ -78,7 +78,7 @@ function checkAndCreateDestination(){
 
     if [ ! -e "$dest" ]
     then
-        mkdir $dest
+        mkdir "$dest"
     fi
 }
 
@@ -98,28 +98,28 @@ ORACLE_INSTANCE=${ORACLE_CONNECT_STRING##*@}
 ORACLE_INSTANCE_DIR=$SOURCES/$ORACLE_INSTANCE
 checkAndCreateDestination "$ORACLE_INSTANCE_DIR"
 
-# get users list for export schema scripts
-execSQL "@$SCRIPT_DIR/src/get_users.sql;"
+# get users with types of their objects
+execSQL "@$SCRIPT_DIR/src/get_users_with_types.sql;"
 checkExitCode $? $E_CANT_GET_USERS "$ORACLE_SQL_EXECUTE_RESULT"
 
-USER_LIST=$ORACLE_SQL_EXECUTE_RESULT
+USER_TYPES_LIST=$ORACLE_SQL_EXECUTE_RESULT
 
-if [ -z "${USER_LIST}" ]
+if [ -z "${USER_TYPES_LIST}" ]
 then
     echo "Users not found!"
     exit $E_USERS_NOT_FOUND
 fi
 
-for username in ${USER_LIST}
+echo "${USER_TYPES_LIST}" | while read line
 do
-    USER_DIR=$ORACLE_INSTANCE_DIR/$username
-    echo -e "$USER_DIR"
+    echo $line
+    user=${line%%|*}
+    type=${line##*|}
+
+    USER_DIR=$ORACLE_INSTANCE_DIR/$user
+    TYPE_DIR=$USER_DIR/$type
+
     checkAndCreateDestination "$USER_DIR"
-
-    execSQL "@$SCRIPT_DIR/src/get_types_for_user.sql $username"
-    checkExitCode $? $E_CANT_GET_TYPES "$ORACLE_SQL_EXECUTE_RESULT"
-
-    USER_TYPE_LIST=$ORACLE_SQL_EXECUTE_RESULT
-
-    echo $USER_TYPE_LIST;
+    echo ${TYPE_DIR}
+    checkAndCreateDestination "$TYPE_DIR"
 done
