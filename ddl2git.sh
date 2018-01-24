@@ -13,6 +13,8 @@ SCRIPT_NAME=`basename $0`
 SCRIPT_DIR=$(dirname "$(realpath -s "$0")")
 SOURCES=$SCRIPT_DIR/sources
 
+GIT_AUTHOR_NAME="ddl2git v1.1.0"
+GIT_AUTHOR_EMAIL="dd2git@localhost"
 
 # error codes
 E_ERROR=10
@@ -92,6 +94,9 @@ source "$SCRIPT_DIR/oracle_env.sh"
 execSQL "SELECT * FROM DUAL;"
 checkExitCode $? $E_CONNECTION_ERROR "$ORACLE_SQL_EXECUTE_RESULT"
 
+# export start time
+START_TSTMP=`LANG=c date "+%F %T"`
+
 # =====================================================
 # Create destination project structure for export
 # =====================================================
@@ -132,8 +137,6 @@ done
 
 TEMP_EXPORT_SCRIPT="$SOURCES/temp_export_${ORACLE_INSTANCE}.sql"
 EXPORT_SCRIPT="$SOURCES/export_${ORACLE_INSTANCE}.sql"
-echo ${TEMP_EXPORT_SCRIPT}
-echo ${EXPORT_SCRIPT}
 
 execSQL "@$SCRIPT_DIR/src/generate_export_script.sql $TEMP_EXPORT_SCRIPT"
 checkExitCode $? $E_CANT_GENERATE_EXPORT_SCRIPT "$ORACLE_SQL_EXECUTE_RESULT"
@@ -146,3 +149,30 @@ echo "/" >> $EXPORT_SCRIPT
 cd $ORACLE_INSTANCE_DIR
 execSQL "@$EXPORT_SCRIPT;"
 checkExitCode $? $E_CANT_EXPORT_DDL "$ORACLE_SQL_EXECUTE_RESULT"
+
+# export stop time
+END_TSTMP=`LANG=c date "+%F %T"`
+
+# =======================================================
+# Commit to git
+# =======================================================
+
+git_check=$(git rev-parse)
+if [ $? -ne 0 ]
+then
+    git init
+    git config user.email "$GIT_AUTHOR_EMAIL"
+    git config user.name "$GIT_AUTHOR_NAME"
+    git add *
+    git commit -m "Initial commit on $START_TSTMP, export ended at $END_TSTMP"
+else
+    git add *
+    git commit -m "Store changes on $START_TSTMP, export ended at $END_TSTMP"
+fi
+
+# push to remote repo from remote list
+GIT_REMOTE_LIST=$(git remote)
+for git_remote in $GIT_REMOTE_LIST
+do
+    git push ${git_remote} master
+done
