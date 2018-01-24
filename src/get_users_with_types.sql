@@ -3,7 +3,10 @@ SET VERIFY OFF
 SET linesize 150
 SET pages 0
 
-SELECT username || '|' || object_type user_types
+-- exclude predefined accounts
+-- https://docs.oracle.com/database/121/TDPSG/GUID-3EC7A894-D620-4497-AFB1-64EB8C33D854.htm#TDPSG20030
+
+SELECT username || '|' || translate(object_type,' ','_') user_types
   FROM (  SELECT DISTINCT usr.username, dbo.object_type
             FROM sys.dba_users usr, sys.dba_objects dbo
            WHERE     usr.default_tablespace NOT IN ('SYSTEM', 'SYSAUX')
@@ -44,7 +47,9 @@ SELECT username || '|' || object_type user_types
                                              'INDEX SUBPARTITION',
                                              'LOB PARTITION',
                                              'LOB',
-                                             'PACKAGE BODY')
+                                             'PACKAGE BODY',
+                                             'JOB',
+                                             'JAVA DATA')
         ORDER BY usr.username, dbo.object_type);
 
 EXIT

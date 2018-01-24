@@ -22,6 +22,8 @@ E_CANT_GET_USERS=13
 E_USERS_NOT_FOUND=14
 E_DESTINATION_DIR=15
 E_CANT_GET_TYPES=16
+E_CANT_GENERATE_EXPORT_SCRIPT=17
+E_CANT_EXPORT_DDL=18
 
 
 # check arguments
@@ -43,10 +45,11 @@ function checkExitCode(){
     local exitCode=$1
     local errorCode=${2:-$E_ERROR}
     local errorMsg=${3:-"Error occurred"}
+    local emsg=`echo "${errorMsg}" | tail -n 15`
 
     if [ "$exitCode" -ne 0 ]
     then
-        echo -e "SqlPlus error:\n${errorMsg}"
+        echo -e "Error:\n${emsg}"
         exit $errorCode
     fi
 }
@@ -112,7 +115,6 @@ fi
 
 echo "${USER_TYPES_LIST}" | while read line
 do
-    echo $line
     user=${line%%|*}
     type=${line##*|}
 
@@ -120,6 +122,27 @@ do
     TYPE_DIR=$USER_DIR/$type
 
     checkAndCreateDestination "$USER_DIR"
-    echo ${TYPE_DIR}
     checkAndCreateDestination "$TYPE_DIR"
 done
+
+
+# =====================================================
+# Export DDL to project folders
+# =====================================================
+
+TEMP_EXPORT_SCRIPT="$SOURCES/temp_export_${ORACLE_INSTANCE}.sql"
+EXPORT_SCRIPT="$SOURCES/export_${ORACLE_INSTANCE}.sql"
+echo ${TEMP_EXPORT_SCRIPT}
+echo ${EXPORT_SCRIPT}
+
+execSQL "@$SCRIPT_DIR/src/generate_export_script.sql $TEMP_EXPORT_SCRIPT"
+checkExitCode $? $E_CANT_GENERATE_EXPORT_SCRIPT "$ORACLE_SQL_EXECUTE_RESULT"
+
+cat $SCRIPT_DIR/src/header.sql > $EXPORT_SCRIPT
+cat $TEMP_EXPORT_SCRIPT >> $EXPORT_SCRIPT
+echo "EXIT" >> $EXPORT_SCRIPT
+echo "/" >> $EXPORT_SCRIPT
+
+cd $ORACLE_INSTANCE_DIR
+execSQL "@$EXPORT_SCRIPT;"
+checkExitCode $? $E_CANT_EXPORT_DDL "$ORACLE_SQL_EXECUTE_RESULT"
