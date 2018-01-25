@@ -104,6 +104,10 @@ START_TSTMP=`LANG=c date "+%F %T"`
 # get oracle instance from connection string
 ORACLE_INSTANCE=${ORACLE_CONNECT_STRING##*@}
 ORACLE_INSTANCE_DIR=$SOURCES/$ORACLE_INSTANCE
+
+echo "=== Export sources ==="
+echo "Started at $START_TSTMP"
+
 checkAndCreateDestination "$ORACLE_INSTANCE_DIR"
 
 # get users with types of their objects
@@ -130,7 +134,6 @@ do
     checkAndCreateDestination "$TYPE_DIR"
 done
 
-
 # =====================================================
 # Export DDL to project folders
 # =====================================================
@@ -152,27 +155,35 @@ checkExitCode $? $E_CANT_EXPORT_DDL "$ORACLE_SQL_EXECUTE_RESULT"
 
 # export stop time
 END_TSTMP=`LANG=c date "+%F %T"`
+echo "Finished at $END_TSTMP"
 
 # =======================================================
 # Commit to git
 # =======================================================
 
+echo "=== Commit changes in .git repo ==="
+
 git_check=$(git rev-parse)
 if [ $? -ne 0 ]
 then
-    git init
-    git config user.email "$GIT_AUTHOR_EMAIL"
-    git config user.name "$GIT_AUTHOR_NAME"
-    git add *
-    git commit -m "Initial commit on $START_TSTMP, export ended at $END_TSTMP"
+    git init 2>&1
+    git config user.email "$GIT_AUTHOR_EMAIL" 2>&1
+    git config user.name "$GIT_AUTHOR_NAME" 2>&1
+    git add * 2>&1
+    git commit -m "Initial commit on $START_TSTMP, export ended at $END_TSTMP" 2>&1
 else
-    git add *
-    git commit -m "Store changes on $START_TSTMP, export ended at $END_TSTMP"
+    git add * 2>&1
+    git commit -m "Store changes on $START_TSTMP, export ended at $END_TSTMP" 2>&1
+
+    echo "===  Commit details ==="
+    git --no-pager log -1 --name-status 2>&1
 fi
 
+echo "=== Update remote repository ==="
 # push to remote repo from remote list
 GIT_REMOTE_LIST=$(git remote)
 for git_remote in $GIT_REMOTE_LIST
 do
-    git push ${git_remote} master
+    echo "On $git_remote :"
+    git push ${git_remote} master 2>&1
 done
