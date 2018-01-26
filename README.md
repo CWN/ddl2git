@@ -11,7 +11,7 @@
 
 1. Check out a clone of this repo to a location of your choice, such as
     ```bash
-    $ git clone--depth=1 https://github.com/CWN/ddl2git.git ~/ddl2git
+    $ git clone --depth=1 https://github.com/CWN/ddl2git.git ~/ddl2git
     ```
 
 2. Copy **oracle_env.sh.dist** to **oracle_env.sh** and modify it for you local oracle environment
@@ -20,7 +20,7 @@
     $ vi oracle_env.sh
     ``` 
 
-##Usage
+## Usage
 Script export entire DB, except oracle [predefined users](https://docs.oracle.com/database/121/TDPSG/GUID-3EC7A894-D620-4497-AFB1-64EB8C33D854.htm#TDPSG20030)
 
 ```bash
