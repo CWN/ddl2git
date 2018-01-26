@@ -27,8 +27,8 @@ Script export entire DB, except oracle [predefined users](https://docs.oracle.co
 $ ./ddl2git.sh user/password@exampledb
 ```
 
-Script create or use existing folder **exampledb** inside **sources** in script dir and dump DDLs to it.
-Destination export structure would be like this 
+Script create or use existing folder **exampledb/** inside **sources/** in script dir and dump DDLs to it.
+Destination export structure would be like this: 
 ```
 <ORACLE_DB_NAME>/<ORACLE_USER>/<OBJECT_TYPE>/<OBJECT_NAME>
 ```
@@ -98,7 +98,7 @@ $ git remote add <remote_git_repo_url> <remote_git_repo_name>
 $ git remote remove <remote_git_repo_name>
  
 ``` 
-**NOTE**: For non-interactive usage use ssh link and key based authentication
+**NOTE**: For non-interactive usage use ssh url and key based authentication
 
 ### Cron
 For periodical usage in cron task use **ddl2git_logger.sh**
