@@ -30,13 +30,15 @@ E_CANT_EXPORT_DDL=18
 
 # check arguments
 ARGS_COUNT=1
-if [ $# -ne "$ARGS_COUNT" ]; then
+if [ $# -lt "$ARGS_COUNT" ]; then
     echo -e "Usage: $SCRIPT_NAME oracle_connect_string"
     echo -e "\nExample: $SCRIPT_NAME user/password@tns_db_name"
+    echo -e "\nor for single schema: $SCRIPT_NAME user/password@tns_db_name schema_name"
     exit $E_WRONG_ARGS
 fi
 
 ORACLE_CONNECT_STRING=$1
+ORACLE_USER=$2
 
 # global variables
 ORACLE_SQL_EXECUTE_RESULT=""
@@ -111,7 +113,13 @@ echo "Started at $START_TSTMP"
 checkAndCreateDestination "$ORACLE_INSTANCE_DIR"
 
 # get users with types of their objects
-execSQL "@$SCRIPT_DIR/src/get_users_with_types.sql;"
+if [ -z ${ORACLE_USER} ]
+then
+    execSQL "@$SCRIPT_DIR/src/get_users_with_types.sql;"
+else
+    execSQL "@$SCRIPT_DIR/src/types_for_schema.sql $ORACLE_USER"
+fi
+
 checkExitCode $? $E_CANT_GET_USERS "$ORACLE_SQL_EXECUTE_RESULT"
 
 USER_TYPES_LIST=$ORACLE_SQL_EXECUTE_RESULT
@@ -141,7 +149,12 @@ done
 TEMP_EXPORT_SCRIPT="$SOURCES/temp_export_${ORACLE_INSTANCE}.sql"
 EXPORT_SCRIPT="$SOURCES/export_${ORACLE_INSTANCE}.sql"
 
-execSQL "@$SCRIPT_DIR/src/generate_export_script.sql $TEMP_EXPORT_SCRIPT"
+if [ -z ${ORACLE_USER} ]
+then
+    execSQL "@$SCRIPT_DIR/src/generate_export_script.sql $TEMP_EXPORT_SCRIPT"
+else
+    execSQL "@$SCRIPT_DIR/src/generate_export_script_for_schema.sql $TEMP_EXPORT_SCRIPT $ORACLE_USER"
+fi
 checkExitCode $? $E_CANT_GENERATE_EXPORT_SCRIPT "$ORACLE_SQL_EXECUTE_RESULT"
 
 cat $SCRIPT_DIR/src/header.sql > $EXPORT_SCRIPT

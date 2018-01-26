@@ -19,12 +19,18 @@
     $ cp oracle_env.sh.dist oracle_env.sh
     $ vi oracle_env.sh
     ``` 
+3. Create or use existing oracle user with granted role **SELECT_CATALOG_ROLE**
 
 ## Usage
-Script export entire DB, except oracle [predefined users](https://docs.oracle.com/database/121/TDPSG/GUID-3EC7A894-D620-4497-AFB1-64EB8C33D854.htm#TDPSG20030)
+Export entire DB, except oracle [predefined users](https://docs.oracle.com/database/121/TDPSG/GUID-3EC7A894-D620-4497-AFB1-64EB8C33D854.htm#TDPSG20030)
 
 ```bash
 $ ./ddl2git.sh user/password@exampledb
+```
+
+Export only one user (include someone from predefined user)
+```bash
+$ ./ddl2git.sh user/password@exampledb example_schema_name
 ```
 
 Script create or use existing folder **exampledb/** inside **sources/** in script dir and dump DDLs to it.
