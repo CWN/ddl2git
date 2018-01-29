@@ -13,8 +13,9 @@ SCRIPT_NAME=`basename $0`
 SCRIPT_DIR=$(dirname "$(realpath -s "$0")")
 SOURCES=$SCRIPT_DIR/sources
 
-GIT_AUTHOR_NAME="ddl2git v1.1.0"
-GIT_AUTHOR_EMAIL="dd2git@localhost"
+# set git author environment - used by git commit
+export GIT_AUTHOR_NAME="ddl2git v1.2.1"
+export GIT_AUTHOR_EMAIL="dd2git@localhost"
 
 # error codes
 E_ERROR=10
@@ -39,6 +40,29 @@ fi
 
 ORACLE_CONNECT_STRING=$1
 ORACLE_USER=$2
+
+# get oracle instance from connection string
+ORACLE_INSTANCE=${ORACLE_CONNECT_STRING##*@}
+
+# check that authentication part present
+if [[ $ORACLE_CONNECT_STRING = *"@"* ]]; then
+    ORACLE_SECURE=${ORACLE_CONNECT_STRING%%@*}
+else
+    ORACLE_SECURE=
+fi
+
+# if authentication empty - search login pair in files inside keys/ directory
+if [ -z "${ORACLE_SECURE}" ]
+then
+    KEY_FILE="$SCRIPT_DIR/keys/$ORACLE_INSTANCE"
+    if [ -e "$KEY_FILE" ]
+    then
+        ORACLE_SECURE=`cat "$KEY_FILE"`
+    fi
+fi
+
+ORACLE_CONNECT_STRING="$ORACLE_SECURE@$ORACLE_INSTANCE"
+ORACLE_INSTANCE_DIR="$SOURCES/$ORACLE_INSTANCE"
 
 # global variables
 ORACLE_SQL_EXECUTE_RESULT=""
@@ -103,10 +127,6 @@ START_TSTMP=`LANG=c date "+%F %T"`
 # Create destination project structure for export
 # =====================================================
 
-# get oracle instance from connection string
-ORACLE_INSTANCE=${ORACLE_CONNECT_STRING##*@}
-ORACLE_INSTANCE_DIR=$SOURCES/$ORACLE_INSTANCE
-
 echo "=== Export sources ==="
 echo "Started at $START_TSTMP"
 
@@ -126,7 +146,7 @@ USER_TYPES_LIST=$ORACLE_SQL_EXECUTE_RESULT
 
 if [ -z "${USER_TYPES_LIST}" ]
 then
-    echo "Users not found!"
+    echo "Nothing to export from users schema!"
     exit $E_USERS_NOT_FOUND
 fi
 
