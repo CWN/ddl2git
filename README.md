@@ -33,6 +33,15 @@ Export only one user (include someone from predefined user)
 $ ./ddl2git.sh user/password@exampledb example_schema_name
 ```
 
+**NOTE:** For hide login/password pair - store it in file with db name (*exampledb*) in keys/ folder and run script:
+```bash
+$  ls <SCRIPT_DIR>/keys/
+exampledb
+
+$ ./ddl2git.sh exampledb
+```
+
+
 Script create or use existing folder **exampledb/** inside **sources/** in script dir and dump DDLs to it.
 Destination export structure would be like this: 
 ```
