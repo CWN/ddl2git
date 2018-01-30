@@ -20,6 +20,11 @@
     $ vi oracle_env.sh
     ``` 
 3. Create or use existing oracle user with granted role **SELECT_CATALOG_ROLE**
+4. Set global (system wide) git user and email if it not yet configured
+```bash
+git config --global user.email "superuser@test.host"
+git config --global user.name "superuser"
+```
 
 ## Usage
 Export entire DB, except oracle [predefined users](https://docs.oracle.com/database/121/TDPSG/GUID-3EC7A894-D620-4497-AFB1-64EB8C33D854.htm#TDPSG20030)

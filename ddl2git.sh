@@ -14,7 +14,7 @@ SCRIPT_DIR=$(dirname "$(realpath -s "$0")")
 SOURCES=$SCRIPT_DIR/sources
 
 # set git author environment - used by git commit
-export GIT_AUTHOR_NAME="ddl2git v1.2.1"
+export GIT_AUTHOR_NAME="ddl2git v1.2.2"
 export GIT_AUTHOR_EMAIL="dd2git@localhost"
 
 # error codes
@@ -58,10 +58,13 @@ then
     if [ -e "$KEY_FILE" ]
     then
         ORACLE_SECURE=`cat "$KEY_FILE"`
+        ORACLE_CONNECT_STRING="$ORACLE_SECURE@$ORACLE_INSTANCE"
+    else
+        ORACLE_CONNECT_STRING="/@$ORACLE_INSTANCE"
+        echo "Authentication parameters not found"
     fi
 fi
 
-ORACLE_CONNECT_STRING="$ORACLE_SECURE@$ORACLE_INSTANCE"
 ORACLE_INSTANCE_DIR="$SOURCES/$ORACLE_INSTANCE"
 
 # global variables
