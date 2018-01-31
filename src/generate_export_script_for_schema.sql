@@ -11,7 +11,7 @@ set sqlterminator off
 -- $ - special usage in BASH
 -- _space_ - bug in some version of sqlplus when spool not working for filename with space
 
-SELECT 'spool '''|| dbo.owner || '/' || dbo.object_type || '/' || replace(replace(dbo.object_name,'/','_SLASHSIGN_'), '$', '_DOLLARSIGN_') || '.sql'';
+SELECT 'spool '''|| dbo.owner || '/' || dbo.object_type || '/' || replace(replace(translate(dbo.object_name,' ','-'),'/','_SLASHSIGN_'), '$', '_DOLLARSIGN_') || '.sql'';
 SELECT DBMS_METADATA.GET_DDL('''|| dbo.object_type  ||''', ''' || dbo.object_name || ''', ''' || dbo.owner || ''') FROM DUAL;
 spool off;'
   FROM sys.dba_users usr,

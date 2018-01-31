@@ -14,7 +14,7 @@ SCRIPT_DIR=$(dirname "$(realpath -s "$0")")
 SOURCES=$SCRIPT_DIR/sources
 
 # set git author environment - used by git commit
-export GIT_AUTHOR_NAME="ddl2git v1.2.3"
+export GIT_AUTHOR_NAME="ddl2git v1.2.4"
 export GIT_AUTHOR_EMAIL="dd2git@localhost"
 
 # error codes
